@@ -1,0 +1,12 @@
+*.xlsx
+*.txt
+*.csv
+__pycache__/*
+Logs/*
+*.zip
+FilesSent/*
+FilesUploaded/*
+FilesCreated/*
+AllTransactionsLastYear.py
+config.py
+contact-transfer.py
