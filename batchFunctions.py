@@ -17,7 +17,7 @@ import dict2xml
 import config
 
 
-conns= config.conns
+conns= config.connsEA
 
 facility_addresses={
                 'Chandler':
@@ -97,7 +97,6 @@ def create_batch(batchNo,clinic):
         providers = get_claim_provider(cursor,claim['DBID'])
         claimPatient = get_claim_member(cursor, claim['ClaimMemberID'])
         #print(appointmentDate,claimPatient['InsuredName'],claimPatient['FirstName'],claimPatient['LastName'],claimPatient['patID'])
-        
         patientInfo = get_patientInfo(cursor, appointmentDate,claimPatient['InsuredName'],claimPatient['FirstName'],claimPatient['LastName'],claimPatient['patID'])
         for procedure in claimdic['PROCEDURE_CODES']['PROCEDURE']:
             if procedure['DESCRIPTION'].find('NOC')==-1:
@@ -383,20 +382,32 @@ def marital_update(marital):
         
 '''
 
-  get_patientInfo(cursor,datetime.datetime(2022,4,13,15,00,00),38642 ,'Nicole','Hills',38642)
+  get_patientInfo(cursor,datetime.datetime(2022,5,19,14,00,00),38283 ,'Susan','Wozniak',38283)
 '''  
 def get_patientInfo(cursor,dateTime,insName,first,last,patID):
     hour = dateTime.strftime('%H')
-    date = dateTime.strftime('%Y-%m-%d ')
+    dateBefore = dateTime.strftime('%Y-%m-%d ')
+    dateAfter = dateTime.strftime('%Y-%m-%d ')
     hourAfter=int(hour)+6
     hourBefore=int(hour)-6
-    dateTimeBefore=date+str(hourBefore)+':00:00'
-    dateTimeAfter=date+str(hourAfter)+':00:00'
+    if hourAfter==24:
+        hourAfter=0
+        dateAfter = dateTime+datetime.timedelta(days=1)
+        dateAfter = dateAfter.strftime('%Y-%m-%d ')
+    if hourAfter>24:
+        hourAfter=hourAfter-24
+        dateAfter = dateTime+datetime.timedelta(days=1)
+        dateAfter = dateAfter.strftime('%Y-%m-%d ')
+    if hourBefore<0:
+        hourBefore = hourBefore+24
+        dateBefore = dateTime-datetime.timedelta(days=1)
+        dateBefore = dateBefore.strftime('%Y-%m-%d ')
+    dateTimeBefore=dateBefore+str(hourBefore)+':00:00'
+    dateTimeAfter=dateAfter+str(hourAfter)+':00:00'
     query = "SELECT A.ID,P.AccountNo,P.EmployerName,P.EmploymentStatus,P.MaritalStatus,P.ID "\
             "FROM Appointments A "\
             "LEFT JOIN Patients P ON A.PatientID=P.ID "\
             "WHERE P.ID='"+str(patID)+"' AND ((A.ScheduleDateTime>='"+str(dateTimeBefore)+"' AND A.ScheduleDateTime<='"+str(dateTimeAfter)+"') OR (A.CheckInDateTime>='"+str(dateTimeBefore)+"' AND A.CheckInDateTime<='"+str(dateTimeAfter)+"'))"
-    #print(query)
     cursor.execute(query)
     rows = cursor.fetchall()
     row = rows[0]

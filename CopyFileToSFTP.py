@@ -38,7 +38,7 @@ def main():
     alreadyUploaded = open("Logs\\uploaded.log",'r')
     alreadyUploaded = alreadyUploaded.read().splitlines()
     uploadedList=open("Logs\\uploaded.log",'a')
-    clinics = ['Chandler','Queen Creek','Desert Ridge','South Chandler']
+    clinics = ['Queen Creek','Desert Ridge','South Chandler','Goodyear']
     for clinic in clinics:
         print(clinic)
         dir_list = os.listdir(path+'\\FilesSent\\'+clinic)
@@ -62,15 +62,15 @@ def main():
         else:
             logging.warning(clinic+' no files were ready to upload')
 if __name__=='__main__':
-    schedule.every().day.at("08:50").do(main)
-    schedule.every().day.at("09:11").do(main)
-    schedule.every().day.at("10:10").do(main)
-    schedule.every().day.at("11:10").do(main)
-    schedule.every().day.at("12:41").do(main)
-    schedule.every().day.at("13:03").do(main)
-    schedule.every().day.at("14:17").do(main)
-    schedule.every().day.at("15:37").do(main)
-    schedule.every().day.at("16:10").do(main)
+    schedule.every().day.at("08:12").do(main)
+    schedule.every().day.at("09:12").do(main)
+    schedule.every().day.at("10:12").do(main)
+    schedule.every().day.at("11:12").do(main)
+    schedule.every().day.at("12:12").do(main)
+    schedule.every().day.at("13:12").do(main)
+    schedule.every().day.at("14:12").do(main)
+    schedule.every().day.at("15:12").do(main)
+    schedule.every().day.at("16:12").do(main)
     while schedule.jobs:
         schedule.run_pending()
         time.sleep(1)

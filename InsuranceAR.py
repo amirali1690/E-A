@@ -6,7 +6,7 @@ import time
 import config
 
 
-conns= config.conns
+conns= config.conns2
 
 def get_claim(cursor,ID):
     query = "SELECT C.*, CP.Identifier1Code,CP.Identifier1 "\
@@ -57,7 +57,7 @@ def get_claimMember(cursor,ID):
 
 def get_billedCharge(cursor,claimLineID):
     query = "SELECT BC.AppliedAmt,BC.paidDate,T.TranAmt,T.AllowedAmt,T.PriPaidAmt,"\
-            "T.WOAmt,T.SecPaidAmt "\
+            "T.WOAmt,T.SecPaidAmt,T.ID "\
             "FROM BilledCharges BC "\
             "LEFT JOIN Transactions T ON BC.ChargeTranID=T.ID "\
             "WHERE BC.ClaimLineID="+str(claimLineID)
@@ -65,12 +65,15 @@ def get_billedCharge(cursor,claimLineID):
     rows = cursor.fetchall()
     if rows:
         row = rows[0]
+        #print(row)
         claimInfo={}
         claimInfo['charge']=row[2]
         claimInfo['paidAmount']=row[4]
         claimInfo['secondary']=row[6] if row[6]!=None else 0
-        claimInfo['insBalance']=row[3]-(row[4]+claimInfo['secondary'])
-        claimInfo['lastpaid']=row[1].strftime('%m/%d/%Y')
+        claimInfo['primary'] = row[4] if row[4]!=None else 0
+        claimInfo['allowed'] = row[3] if row[3] !=None else 0
+        claimInfo['insBalance']=claimInfo['allowed']-(claimInfo['primary']+claimInfo['secondary'])
+        claimInfo['lastpaid']=row[1].strftime('%m/%d/%Y') if row[1]!=None else 0
        
     else:
         claimInfo={}
@@ -95,7 +98,7 @@ def get_claimPaymentLines(cursor,claimLineID):
             claimInfo['insBalance']=claimInfo['charge']
         claimInfo['secondary']=row[28]
         claimInfo['secondaryBalance']=row[30]
-        claimInfo['lastpaid']=row[-1].strftime('%m/%d/%Y')
+        claimInfo['lastpaid']=row[-1].strftime('%m/%d/%Y') if row[-1]!=None else 0
     else:
         claimInfo=get_billedCharge(cursor,claimLineID) 
     return claimInfo
@@ -124,13 +127,31 @@ def get_claimBillingProvier(cursor,claimBillingProviderID):
         claimInfo['FacilityCity']=row[8]
         claimInfo['FacilityState']=row[9]
         claimInfo['FacilityZipCode']=row[10]
-        claimInfo['Provider']=row[11]
-        claimInfo['ProviderTIN']=row[12]
-        claimInfo['ProviderNPI']=row[13]
         claimInfo['FacilityNPI']=row[14]
     else:
         claimInfo={}  
     return claimInfo       
+
+def get_provider (cursor,claimID):
+    query = "SELECT CP.EntityTypeCode, D.FullName,D.TIN,D.NPI "\
+            "FROM ClaimProviders CP "\
+            "LEFT JOIN Doctors D ON D.ID=CP.DoctorID "\
+            "WHERE ClaimID="+str(claimID)
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    if rows:
+        for row in rows:
+            if row[0]=='1':
+                providerInfo={}
+                providerInfo['Provider']=row[1]
+                providerInfo['ProviderTIN']=row[2]
+                providerInfo['ProviderNPI']=row[3]
+            
+    else:
+        providerInfo={}
+        
+    return providerInfo
+
 
 def get_insurances(cursor,patientID,svcDate):
     query = "SELECT * "\
@@ -188,7 +209,7 @@ def get_claimLines(cursor,date):
     query = "SELECT CL.* "\
             "FROM ClaimLines CL "\
             "LEFT JOIN Claims C ON C.ID=CL.ClaimID "\
-            "WHERE C.DocumentState<>6 AND CL.BeginDate>='"+date+"' AND BeginDate<'2021-04-02'"
+            "WHERE C.DocumentState<>6 AND CL.BeginDate>='"+date+"' AND BeginDate<'2022-05-01'"
     cursor.execute(query)
     rows = cursor.fetchall()
     claims = []
@@ -201,6 +222,9 @@ def get_claimLines(cursor,date):
         claim = {}
         claim['claimLineID']=row[0]
         claim['claimID']=row[1]
+        providerInfo = get_provider(cursor,claim['claimID'])
+        for key in providerInfo.keys():
+            claim[key]=providerInfo[key]
         claim['sequence']=row[2]
         claim['code']=row[3]
         claim['chargeAmount']=row[4]
@@ -247,13 +271,13 @@ def get_claimLines(cursor,date):
     return claims
     
 
-date = datetime.datetime(2021,4, 1).strftime('%Y-%m-%d')
+date = datetime.datetime(2021,4,1).strftime('%Y-%m-%d')
 claims ={}
 for clinic in conns:
     print(clinic)
     conn = conns[clinic]
     cursor=conn.cursor()
-    if clinic=='Desert Ridge':
+    if clinic=='Goodyear':
         claims[clinic]=get_claimLines(cursor,date)
         
 
@@ -268,10 +292,13 @@ fields=['PatientAccountNo','PatientCaseType','firstName','lastName',
 output={}
 for clinic in claims.keys():
     output[clinic]=[]
+    length= len(claims[clinic])
     i=0
     for claim in claims[clinic]:
-        print(claim['claimID'],claim['patientID'],claim['PatientAccountNo'],claim['serviceDate'])
         temp=[]
+        #temp.append(claim['claimID'])
+        #temp.append(claim['claimBillingProviderID'])
+        #temp.append(claim['claimMemberID'])
         temp.append(claim['PatientAccountNo'])
         temp.append(claim['PatientCaseType'])
         temp.append(claim['firstName'])
@@ -326,8 +353,8 @@ for clinic in claims.keys():
                     tempx.append(claim['insurances'][insuranceKey]['companyPhone'])
                     tempx.append(claim['insurances'][insuranceKey]['EffectiveDate'])
                     tempx.append(claim['insurances'][insuranceKey]['GroupNo'])
-                    tempx[28]=claim['secondaryBalance']
-                    tempx.append(claim['secondary'])
+                    tempx[28]=claim['secondaryBalance'] if 'secondaryBalance' in claim.keys() else 0
+                    tempx.append(claim['secondary']) if 'secondary' in claim.keys() else tempx.append(0)
                     output[clinic].append(tempx)
                     i+=1
         elif len(claim['insurances'])==0:
@@ -350,7 +377,7 @@ for clinic in claims.keys():
             temp.append(claim['paidAmount'])
             output[clinic].append(temp)
             i+=1
-    print(i)
+    print(i,length)
 
 
 for clinic in output.keys():
@@ -358,7 +385,6 @@ for clinic in output.keys():
         write = csv.writer(csvfile)
         write.writerow(fields)
         for row in output[clinic]:
-            print(row[28])
             if row[28]!='0' and row[28]!=0 and row[28]!=None and row[28]!='0.00':
                 write.writerow(row)
             

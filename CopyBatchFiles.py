@@ -19,7 +19,7 @@ def main():
     alreadyCopied = open("Logs\\copied.log",'r')
     alreadyCopied = alreadyCopied.read().splitlines()
     CopiedList=open("Logs\\copied.log",'a')
-    clinics = ['Chandler','Queen Creek','Desert Ridge','South Chandler','Phoenix']
+    clinics = ['Queen Creek','Desert Ridge','South Chandler','Goodyear']
     for clinic in clinics:
         print(clinic)
         dir_list = os.listdir(path+'\\FilesCreated\\'+clinic)
@@ -43,13 +43,13 @@ def main():
             logging.warning(clinic+' no files were ready to move')
 if __name__=='__main__':
     schedule.every().day.at("08:10").do(main)
-    schedule.every().day.at("09:11").do(main)
+    schedule.every().day.at("09:10").do(main)
     schedule.every().day.at("10:10").do(main)
     schedule.every().day.at("11:10").do(main)
-    schedule.every().day.at("12:17").do(main)
+    schedule.every().day.at("12:10").do(main)
     schedule.every().day.at("13:10").do(main)
     schedule.every().day.at("14:10").do(main)
-    schedule.every().day.at("15:49").do(main)
+    schedule.every().day.at("15:10").do(main)
     schedule.every().day.at("16:10").do(main)
     while schedule.jobs:
         schedule.run_pending()

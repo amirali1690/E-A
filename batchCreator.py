@@ -49,17 +49,21 @@ def main():
                     logging.critical(filename+" Wasn't created")
     return createdBatches,missedBatches
 
+
 if __name__=='__main__':
     schedule.clear()
     schedule.every().day.at("09:00").do(main)
     schedule.every().day.at("10:00").do(main)
     schedule.every().day.at("11:00").do(main)
     schedule.every().day.at("12:00").do(main)
-    schedule.every().day.at("13:01").do(main)
+    schedule.every().day.at("13:00").do(main)
     schedule.every().day.at("14:00").do(main)
     schedule.every().day.at("15:00").do(main)
-    schedule.every().day.at("16:03").do(main)
+    schedule.every().day.at("16:00").do(main)
     schedule.every().day.at("22:00").do(main)
     while schedule.jobs:
         schedule.run_pending()
         time.sleep(1)
+'''
+main()
+'''
