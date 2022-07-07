@@ -6,7 +6,7 @@ import time
 import config
 
 
-conns= config.conns2
+conns= config.connsAR
 
 def get_claim(cursor,ID):
     query = "SELECT C.*, CP.Identifier1Code,CP.Identifier1 "\
@@ -209,7 +209,8 @@ def get_claimLines(cursor,date):
     query = "SELECT CL.* "\
             "FROM ClaimLines CL "\
             "LEFT JOIN Claims C ON C.ID=CL.ClaimID "\
-            "WHERE C.DocumentState<>6 AND CL.BeginDate>='"+date+"' AND BeginDate<'2022-05-01'"
+            "WHERE C.DocumentState<>6 AND CL.BeginDate>='"+date+"'"
+            #AND BeginDate<'2022-05-01'"
     cursor.execute(query)
     rows = cursor.fetchall()
     claims = []
@@ -271,14 +272,13 @@ def get_claimLines(cursor,date):
     return claims
     
 
-date = datetime.datetime(2021,4,1).strftime('%Y-%m-%d')
+date = datetime.datetime(2022,1,1).strftime('%Y-%m-%d')
 claims ={}
 for clinic in conns:
     print(clinic)
     conn = conns[clinic]
     cursor=conn.cursor()
-    if clinic=='Goodyear':
-        claims[clinic]=get_claimLines(cursor,date)
+    claims[clinic]=get_claimLines(cursor,date)
         
 
 fields=['PatientAccountNo','PatientCaseType','firstName','lastName',
@@ -381,7 +381,7 @@ for clinic in claims.keys():
 
 
 for clinic in output.keys():
-    with open(clinic+'.csv','w',newline='\n') as csvfile:
+    with open(clinic+'AR.csv','w',newline='\n') as csvfile:
         write = csv.writer(csvfile)
         write.writerow(fields)
         for row in output[clinic]:
